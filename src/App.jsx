@@ -3,59 +3,71 @@ import Header from './components/Header';
 import MetricsCards from './components/MetricsCards';
 import BookingForm from './components/BookingForm';
 import BookingList from './components/BookingList';
-import DebtorsManager from './components/DebtorsManager';
+import DebtorsModule from './components/DebtorsModule';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('bookings');
+  const [activeTab, setActiveTab] = useState('reservas');
+  const [bookings, setBookings] = useState([]);
+  const [debtors, setDebtors] = useState([]);
+
+  const handleAddBooking = (newBooking) => {
+    setBookings([newBooking, ...bookings]);
+  };
+
+  const handleAddDebtor = (newDebtor) => {
+    setDebtors([newDebtor, ...debtors]);
+  };
+
+  const totalIncome = bookings.reduce((acc, curr) => acc + curr.grandTotal, 0);
+  const totalPendingDebt = debtors.reduce((acc, curr) => acc + Number(curr.amount), 0);
+  const activeBookingsCount = bookings.length;
 
   return (
-    <div style={{ minHeight: '100vh', padding: '2rem' }}>
-      <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-        <Header />
-        
-        {/* Pestañas de navegación */}
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
-          <button 
-            onClick={() => setActiveTab('bookings')}
-            style={{
-              padding: '0.75rem 1.5rem',
-              backgroundColor: activeTab === 'bookings' ? '#38bdf8' : '#1e293b',
-              color: activeTab === 'bookings' ? '#0f172a' : '#f8fafc',
-              border: 'none',
-              borderRadius: '8px',
-              fontWeight: 'bold',
-              cursor: 'pointer'
-            }}
-          >
-            Gestión de Reservas & Cantina
-          </button>
-          <button 
-            onClick={() => setActiveTab('debtors')}
-            style={{
-              padding: '0.75rem 1.5rem',
-              backgroundColor: activeTab === 'debtors' ? '#38bdf8' : '#1e293b',
-              color: activeTab === 'debtors' ? '#0f172a' : '#f8fafc',
-              border: 'none',
-              borderRadius: '8px',
-              fontWeight: 'bold',
-              cursor: 'pointer'
-            }}
-          >
-            Control de Morosos Mensuales
-          </button>
-        </div>
+<div style={{ width: '100%', maxWidth: '1200px', margin: '0 auto', padding: '1rem 0.75rem' }}>      <Header />
 
-        <MetricsCards />
-
-        {activeTab === 'bookings' ? (
-          <div>
-            <BookingForm />
-            <BookingList />
-          </div>
-        ) : (
-          <DebtorsManager />
-        )}
+      {/* Navegación de pestañas */}
+      <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+        <button 
+          onClick={() => setActiveTab('reservas')}
+          style={{
+            padding: '0.75rem 1.5rem',
+            backgroundColor: activeTab === 'reservas' ? 'var(--accent)' : '#1e293b',
+            color: activeTab === 'reservas' ? '#0f172a' : '#f8fafc',
+            border: '1px solid var(--border-color)',
+            borderRadius: '8px',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            transition: 'all 0.2s'
+          }}
+        >
+          Gestión de Reservas & Cantina
+        </button>
+        <button 
+          onClick={() => setActiveTab('morosos')}
+          style={{
+            padding: '0.75rem 1.5rem',
+            backgroundColor: activeTab === 'morosos' ? 'var(--accent)' : '#1e293b',
+            color: activeTab === 'morosos' ? '#0f172a' : '#f8fafc',
+            border: '1px solid var(--border-color)',
+            borderRadius: '8px',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            transition: 'all 0.2s'
+          }}
+        >
+          Control de Morosos Mensuales ({debtors.length})
+        </button>
       </div>
+
+      {activeTab === 'reservas' ? (
+        <>
+          <MetricsCards totalIncome={totalIncome} activeCount={activeBookingsCount} pendingDebt={totalPendingDebt} />
+          <BookingForm onAddBooking={handleAddBooking} />
+          <BookingList bookings={bookings} />
+        </>
+      ) : (
+        <DebtorsModule debtors={debtors} onAddDebtor={handleAddDebtor} />
+      )}
     </div>
   );
 }
