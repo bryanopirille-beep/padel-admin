@@ -18,12 +18,18 @@ export default function App() {
     setDebtors([newDebtor, ...debtors]);
   };
 
+  // Función para eliminar o saldar la deuda cuando pagan
+  const handleDeleteDebtor = (id) => {
+    setDebtors(debtors.filter(d => d.id !== id));
+  };
+
   const totalIncome = bookings.reduce((acc, curr) => acc + curr.grandTotal, 0);
   const totalPendingDebt = debtors.reduce((acc, curr) => acc + Number(curr.amount), 0);
   const activeBookingsCount = bookings.length;
 
   return (
-<div style={{ width: '100%', maxWidth: '1200px', margin: '0 auto', padding: '1rem 0.75rem' }}>      <Header />
+    <div style={{ width: '100%', maxWidth: '1200px', margin: '0 auto', padding: '1rem 0.75rem' }}>
+      <Header />
 
       {/* Navegación de pestañas */}
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
@@ -36,8 +42,7 @@ export default function App() {
             border: '1px solid var(--border-color)',
             borderRadius: '8px',
             fontWeight: 'bold',
-            cursor: 'pointer',
-            transition: 'all 0.2s'
+            cursor: 'pointer'
           }}
         >
           Gestión de Reservas & Cantina
@@ -51,8 +56,7 @@ export default function App() {
             border: '1px solid var(--border-color)',
             borderRadius: '8px',
             fontWeight: 'bold',
-            cursor: 'pointer',
-            transition: 'all 0.2s'
+            cursor: 'pointer'
           }}
         >
           Control de Morosos Mensuales ({debtors.length})
@@ -66,7 +70,7 @@ export default function App() {
           <BookingList bookings={bookings} />
         </>
       ) : (
-        <DebtorsModule debtors={debtors} onAddDebtor={handleAddDebtor} />
+        <DebtorsModule debtors={debtors} onAddDebtor={handleAddDebtor} onDeleteDebtor={handleDeleteDebtor} />
       )}
     </div>
   );

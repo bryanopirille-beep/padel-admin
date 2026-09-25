@@ -1,71 +1,75 @@
 import React, { useState } from 'react';
 
-export default function DebtorsModule({ debtors = [], onAddDebtor }) {
+export default function DebtorsModule({ debtors = [], onAddDebtor, onDeleteDebtor }) {
   const [name, setName] = useState('');
-  const [concept, setConcept] = useState('Alquiler de Cancha / Mensualidad');
-  const [amount, setAmount] = useState('');
+  const [hours, setHours] = useState(1);
+  const [drinks, setDrinks] = useState({
+    agua: 0,
+    gaseosa: 0,
+    energizante: 0,
+    cerveza: 0
+  });
   const [month, setMonth] = useState('Septiembre');
   const [year, setYear] = useState('2026');
 
+  const PRICE_PER_HOUR = 80000;
+  const DRINK_PRICES = {
+    agua: 8000,
+    gaseosa: 12000,
+    energizante: 18000,
+    cerveza: 20000
+  };
+
+  const handleDrinkChange = (drink, value) => {
+    setDrinks({ ...drinks, [drink]: Math.max(0, parseInt(value) || 0) });
+  };
+
+  // Cálculos automáticos de la deuda
+  const totalCourt = hours * PRICE_PER_HOUR;
+  const totalDrinks = Object.keys(drinks).reduce((acc, key) => acc + (drinks[key] * DRINK_PRICES[key]), 0);
+  const totalDebt = totalCourt + totalDrinks;
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!name.trim() || !amount) return alert('Por favor completa los campos obligatorios.');
+    if (!name.trim()) return alert('Por favor ingresa el nombre del cliente.');
+    if (totalDebt <= 0) return alert('La deuda debe ser mayor a 0.');
 
     const newDebtor = {
       id: Date.now(),
       name,
-      concept,
-      amount: parseFloat(amount),
+      hours,
+      drinks: { ...drinks },
+      totalCourt,
+      totalDrinks,
+      amount: totalDebt,
       month,
       year,
       dateAdded: new Date().toLocaleDateString()
     };
 
     onAddDebtor(newDebtor);
+    
+    // Limpiar formulario
     setName('');
-    setAmount('');
+    setHours(1);
+    setDrinks({ agua: 0, gaseosa: 0, energizante: 0, cerveza: 0 });
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      {/* Formulario para registrar nuevo moroso */}
+      {/* Formulario para registrar nuevo moroso con desglose */}
       <div className="padel-card">
-        <h3 style={{ marginTop: 0, color: 'var(--text-main)' }}>Registrar Nuevo Pago Pendiente (Moroso)</h3>
+        <h3 style={{ marginTop: 0, color: 'var(--text-main)' }}>Registrar Pago Pendiente / Moroso</h3>
         
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div className="responsive-grid-3">
             <div>
-              <label style={{ display: 'block', color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Nombre del Cliente / Deudor</label>
+              <label style={{ display: 'block', color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Nombre del Cliente</label>
               <input 
                 type="text" 
                 value={name} 
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Ej. Juan Pérez"
-                required
-                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', backgroundColor: '#0f172a', border: '1px solid var(--border-color)', color: 'var(--text-main)', boxSizing: 'border-box' }}
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Monto a Pagar (Gs.)</label>
-              <input 
-                type="number" 
-                value={amount} 
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="Ej. 150000"
-                required
-                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', backgroundColor: '#0f172a', border: '1px solid var(--border-color)', color: 'var(--text-main)', boxSizing: 'border-box' }}
-              />
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '1rem' }}>
-            <div>
-              <label style={{ display: 'block', color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Concepto</label>
-              <input 
-                type="text" 
-                value={concept} 
-                onChange={(e) => setConcept(e.target.value)}
-                placeholder="Ej. Torneo / Mensualidad / Cancha Fiada"
+                placeholder="Ej. Mía Pirille"
                 required
                 style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', backgroundColor: '#0f172a', border: '1px solid var(--border-color)', color: 'var(--text-main)', boxSizing: 'border-box' }}
               />
@@ -95,16 +99,62 @@ export default function DebtorsModule({ debtors = [], onAddDebtor }) {
             </div>
           </div>
 
+          {/* Horas de Cancha pendientes */}
+          <div>
+            <label style={{ display: 'block', color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+              Horas de Cancha Pendientes (80.000 Gs./h)
+            </label>
+            <input 
+              type="number" 
+              min="0" 
+              max="10" 
+              value={hours} 
+              onChange={(e) => setHours(parseInt(e.target.value) || 0)}
+              style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', backgroundColor: '#0f172a', border: '1px solid var(--border-color)', color: 'var(--text-main)', boxSizing: 'border-box' }}
+            />
+          </div>
+
+          {/* Consumo de Cantina pendiente */}
+          <div>
+            <label style={{ display: 'block', color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Consumo de Cantina Pendiente</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem' }}>
+              {Object.keys(drinks).map((drink) => (
+                <div key={drink} style={{ backgroundColor: '#0f172a', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                  <span style={{ display: 'block', textTransform: 'capitalize', color: 'var(--text-main)', fontSize: '0.8rem', marginBottom: '0.25rem' }}>
+                    {drink} ({DRINK_PRICES[drink].toLocaleString()} Gs.)
+                  </span>
+                  <input 
+                    type="number" 
+                    min="0" 
+                    value={drinks[drink]}
+                    onChange={(e) => handleDrinkChange(drink, e.target.value)}
+                    style={{ width: '100%', padding: '0.4rem', borderRadius: '6px', backgroundColor: '#1e293b', border: '1px solid var(--border-color)', color: 'var(--text-main)', boxSizing: 'border-box' }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Resumen calculado automáticamente */}
+          <div style={{ backgroundColor: '#0f172a', padding: '1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid var(--border-color)' }}>
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+              Cancha: {totalCourt.toLocaleString()} Gs. | Cantina: {totalDrinks.toLocaleString()} Gs.
+            </span>
+            <span style={{ color: '#f43f5e', fontSize: '1.2rem', fontWeight: 'bold' }}>
+              Total Deuda: {totalDebt.toLocaleString()} Gs.
+            </span>
+          </div>
+
           <button 
             type="submit"
-            style={{ padding: '0.75rem', backgroundColor: 'var(--accent)', color: '#0f172a', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem', marginTop: '0.5rem' }}
+            style={{ padding: '0.75rem', backgroundColor: '#f43f5e', color: '#f8fafc', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem' }}
           >
             Registrar Deuda Pendiente
           </button>
         </form>
       </div>
 
-      {/* Lista de Morosos */}
+      {/* Lista de Morosos detallada con botón de Pagado */}
       <div className="padel-card">
         <h3 style={{ marginTop: 0, color: 'var(--text-main)' }}>Listado de Morosos y Pagos Pendientes</h3>
         
@@ -113,21 +163,35 @@ export default function DebtorsModule({ debtors = [], onAddDebtor }) {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {debtors.map((d) => (
-              <div key={d.id} style={{ backgroundColor: '#0f172a', padding: '1.25rem', borderRadius: '12px', border: '1px solid rgba(244, 63, 94, 0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.3rem' }}>
+              <div key={d.id} style={{ backgroundColor: '#0f172a', padding: '1.25rem', borderRadius: '12px', border: '1px solid rgba(244, 63, 94, 0.3)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <strong style={{ color: 'var(--text-main)', fontSize: '1.1rem' }}>{d.name}</strong>
-                    <span style={{ backgroundColor: 'rgba(244, 63, 94, 0.2)', color: '#f43f5e', padding: '0.15rem 0.5rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                    <span style={{ backgroundColor: 'rgba(244, 63, 94, 0.2)', color: '#f43f5e', padding: '0.15rem 0.6rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 'bold' }}>
                       {d.month} {d.year}
                     </span>
                   </div>
-                  <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Concepto: {d.concept}</span>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <span style={{ color: '#f43f5e', fontSize: '1.2rem', fontWeight: 'bold', display: 'block' }}>
+                  <span style={{ color: '#f43f5e', fontSize: '1.2rem', fontWeight: 'bold' }}>
                     {d.amount.toLocaleString()} Gs.
                   </span>
+                </div>
+
+                {/* Desglose de consumo en la deuda */}
+                <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                  <strong>Detalle:</strong> {d.hours} hora(s) de cancha ({d.totalCourt.toLocaleString()} Gs.)
+                  {d.totalDrinks > 0 && (
+                    <span> | Cantina: {Object.entries(d.drinks).filter(([_, q]) => q > 0).map(([k, q]) => `${q} ${k}`).join(', ')} ({d.totalDrinks.toLocaleString()} Gs.)</span>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '0.75rem' }}>
                   <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Registrado el {d.dateAdded}</span>
+                  <button 
+                    onClick={() => onDeleteDebtor(d.id)}
+                    style={{ padding: '0.5rem 1rem', backgroundColor: '#10b981', color: '#0f172a', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem' }}
+                  >
+                    ✓ Marcar como Pagado / Eliminar
+                  </button>
                 </div>
               </div>
             ))}
