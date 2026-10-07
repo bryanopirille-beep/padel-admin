@@ -4,10 +4,10 @@ export default function DebtorsModule({ debtors = [], onAddDebtor, onDeleteDebto
   const [name, setName] = useState('');
   const [hours, setHours] = useState(1);
   const [drinks, setDrinks] = useState({
-    agua: 0,
-    gaseosa: 0,
-    energizante: 0,
-    cerveza: 0
+    agua: '',
+    gaseosa: '',
+    energizante: '',
+    cerveza: ''
   });
   const [month, setMonth] = useState('Septiembre');
   const [year, setYear] = useState('2026');
@@ -21,12 +21,19 @@ export default function DebtorsModule({ debtors = [], onAddDebtor, onDeleteDebto
   };
 
   const handleDrinkChange = (drink, value) => {
-    setDrinks({ ...drinks, [drink]: Math.max(0, parseInt(value) || 0) });
+    const cleanVal = value === '' ? '' : Math.max(0, parseInt(value) || 0);
+    setDrinks({ ...drinks, [drink]: cleanVal });
   };
 
-  // Cálculos automáticos de la deuda
-  const totalCourt = hours * PRICE_PER_HOUR;
-  const totalDrinks = Object.keys(drinks).reduce((acc, key) => acc + (drinks[key] * DRINK_PRICES[key]), 0);
+  // Cálculos automáticos de la deuda (manejando valores vacíos como 0)
+  const hoursVal = parseInt(hours) || 0;
+  const totalCourt = hoursVal * PRICE_PER_HOUR;
+  
+  const totalDrinks = Object.keys(drinks).reduce((acc, key) => {
+    const drinkQty = parseInt(drinks[key]) || 0;
+    return acc + (drinkQty * DRINK_PRICES[key]);
+  }, 0);
+
   const totalDebt = totalCourt + totalDrinks;
 
   const handleSubmit = (e) => {
@@ -34,11 +41,19 @@ export default function DebtorsModule({ debtors = [], onAddDebtor, onDeleteDebto
     if (!name.trim()) return alert('Por favor ingresa el nombre del cliente.');
     if (totalDebt <= 0) return alert('La deuda debe ser mayor a 0.');
 
+    // Convertir los valores vacíos de bebidas a 0 para el objeto guardado
+    const formattedDrinks = {
+      agua: parseInt(drinks.agua) || 0,
+      gaseosa: parseInt(drinks.gaseosa) || 0,
+      energizante: parseInt(drinks.energizante) || 0,
+      cerveza: parseInt(drinks.cerveza) || 0
+    };
+
     const newDebtor = {
       id: Date.now(),
       name,
-      hours,
-      drinks: { ...drinks },
+      hours: hoursVal,
+      drinks: formattedDrinks,
       totalCourt,
       totalDrinks,
       amount: totalDebt,
@@ -52,7 +67,7 @@ export default function DebtorsModule({ debtors = [], onAddDebtor, onDeleteDebto
     // Limpiar formulario
     setName('');
     setHours(1);
-    setDrinks({ agua: 0, gaseosa: 0, energizante: 0, cerveza: 0 });
+    setDrinks({ agua: '', gaseosa: '', energizante: '', cerveza: '' });
   };
 
   return (
@@ -105,11 +120,14 @@ export default function DebtorsModule({ debtors = [], onAddDebtor, onDeleteDebto
               Horas de Cancha Pendientes (80.000 Gs./h)
             </label>
             <input 
-              type="number" 
-              min="0" 
-              max="10" 
+              type="text" 
+              inputMode="numeric"
               value={hours} 
-              onChange={(e) => setHours(parseInt(e.target.value) || 0)}
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, '');
+                setHours(val === '' ? '' : parseInt(val));
+              }}
+              placeholder="1"
               style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', backgroundColor: '#0f172a', border: '1px solid var(--border-color)', color: 'var(--text-main)', boxSizing: 'border-box' }}
             />
           </div>
@@ -124,11 +142,12 @@ export default function DebtorsModule({ debtors = [], onAddDebtor, onDeleteDebto
                     {drink} ({DRINK_PRICES[drink].toLocaleString()} Gs.)
                   </span>
                   <input 
-                    type="number" 
-                    min="0" 
+                    type="text" 
+                    inputMode="numeric"
                     value={drinks[drink]}
-                    onChange={(e) => handleDrinkChange(drink, e.target.value)}
-                    style={{ width: '100%', padding: '0.4rem', borderRadius: '6px', backgroundColor: '#1e293b', border: '1px solid var(--border-color)', color: 'var(--text-main)', boxSizing: 'border-box' }}
+                    onChange={(e) => handleDrinkChange(drink, e.target.value.replace(/\D/g, ''))}
+                    placeholder="0"
+                    style={{ width: '100%', padding: '0.4rem', borderRadius: '6px', backgroundColor: '#1e293b', border: '1px solid var(--border-color)', color: 'var(--text-main)', boxSizing: 'border-box', textAlign: 'center' }}
                   />
                 </div>
               ))}

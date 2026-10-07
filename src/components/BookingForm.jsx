@@ -5,10 +5,10 @@ export default function BookingForm({ onAddBooking }) {
   const [responsible, setResponsible] = useState('');
   const [hours, setHours] = useState(1);
   const [players, setPlayers] = useState([
-    { name: '', agua: 0, gaseosa: 0, energizante: 0, cerveza: 0 },
-    { name: '', agua: 0, gaseosa: 0, energizante: 0, cerveza: 0 },
-    { name: '', agua: 0, gaseosa: 0, energizante: 0, cerveza: 0 },
-    { name: '', agua: 0, gaseosa: 0, energizante: 0, cerveza: 0 }
+    { name: '', agua: '', gaseosa: '', energizante: '', cerveza: '' },
+    { name: '', agua: '', gaseosa: '', energizante: '', cerveza: '' },
+    { name: '', agua: '', gaseosa: '', energizante: '', cerveza: '' },
+    { name: '', agua: '', gaseosa: '', energizante: '', cerveza: '' }
   ]);
 
   const PRICE_PER_HOUR = 80000;
@@ -27,21 +27,30 @@ export default function BookingForm({ onAddBooking }) {
 
   const handlePlayerDrinkChange = (index, drink, value) => {
     const updated = [...players];
-    updated[index][drink] = Math.max(0, parseInt(value) || 0);
+    updated[index][drink] = value === '' ? '' : Math.max(0, parseInt(value) || 0);
     setPlayers(updated);
   };
 
-  // Cálculos totales
-  const totalCourt = hours * PRICE_PER_HOUR;
+  const hoursVal = parseInt(hours) || 0;
+  const totalCourt = hoursVal * PRICE_PER_HOUR;
   const courtPerPlayer = totalCourt / 4;
 
   const playerBreakdown = players.map(p => {
-    const drinksTotal = (p.agua * DRINK_PRICES.agua) +
-                        (p.gaseosa * DRINK_PRICES.gaseosa) +
-                        (p.energizante * DRINK_PRICES.energizante) +
-                        (p.cerveza * DRINK_PRICES.cerveza);
+    const aguaVal = parseInt(p.agua) || 0;
+    const gaseosaVal = parseInt(p.gaseosa) || 0;
+    const energizanteVal = parseInt(p.energizante) || 0;
+    const cervezaVal = parseInt(p.cerveza) || 0;
+
+    const drinksTotal = (aguaVal * DRINK_PRICES.agua) +
+                        (gaseosaVal * DRINK_PRICES.gaseosa) +
+                        (energizanteVal * DRINK_PRICES.energizante) +
+                        (cervezaVal * DRINK_PRICES.cerveza);
     return {
       ...p,
+      agua: aguaVal,
+      gaseosa: gaseosaVal,
+      energizante: energizanteVal,
+      cerveza: cervezaVal,
       drinksTotal,
       total: courtPerPlayer + drinksTotal
     };
@@ -58,7 +67,7 @@ export default function BookingForm({ onAddBooking }) {
       id: Date.now(),
       court,
       responsible,
-      hours,
+      hours: hoursVal || 1,
       totalCourt,
       totalDrinks,
       grandTotal,
@@ -68,14 +77,13 @@ export default function BookingForm({ onAddBooking }) {
 
     onAddBooking(newBooking);
     
-    // Limpiar formulario
     setResponsible('');
     setHours(1);
     setPlayers([
-      { name: '', agua: 0, gaseosa: 0, energizante: 0, cerveza: 0 },
-      { name: '', agua: 0, gaseosa: 0, energizante: 0, cerveza: 0 },
-      { name: '', agua: 0, gaseosa: 0, energizante: 0, cerveza: 0 },
-      { name: '', agua: 0, gaseosa: 0, energizante: 0, cerveza: 0 }
+      { name: '', agua: '', gaseosa: '', energizante: '', cerveza: '' },
+      { name: '', agua: '', gaseosa: '', energizante: '', cerveza: '' },
+      { name: '', agua: '', gaseosa: '', energizante: '', cerveza: '' },
+      { name: '', agua: '', gaseosa: '', energizante: '', cerveza: '' }
     ]);
   };
 
@@ -84,7 +92,6 @@ export default function BookingForm({ onAddBooking }) {
       <h3 style={{ marginTop: 0, color: 'var(--text-main)' }}>Registrar Nueva Reserva</h3>
       
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-        {/* Selector de Cancha, Responsable y Horas */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: '1rem' }}>
           <div>
             <label style={{ display: 'block', color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Cancha</label>
@@ -111,53 +118,82 @@ export default function BookingForm({ onAddBooking }) {
           <div>
             <label style={{ display: 'block', color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Horas (80mil/h)</label>
             <input 
-              type="number" 
-              min="1" 
-              max="5" 
+              type="text" 
+              inputMode="numeric"
               value={hours} 
-              onChange={(e) => setHours(parseInt(e.target.value) || 1)}
-              style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', backgroundColor: '#0c100e', border: '1px solid var(--border-color)', color: 'var(--text-main)', boxSizing: 'border-box' }}
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, '');
+                setHours(val === '' ? '' : Math.max(1, parseInt(val)));
+              }}
+              placeholder="1"
+              style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', backgroundColor: '#0c100e', border: '1px solid var(--border-color)', color: 'var(--text-main)', boxSizing: 'border-box', textAlign: 'center' }} 
             />
           </div>
         </div>
 
-       {/* Detalle por Jugador adaptativo */}
-<div>
-  <label style={{ display: 'block', color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-    Jugadores y Consumo Individual (Cancha: {courtPerPlayer.toLocaleString()} Gs. c/u)
-  </label>
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-    {players.map((p, index) => (
-      <div key={index} className="responsive-player-row">
-        <input 
-          type="text"
-          value={p.name}
-          onChange={(e) => handlePlayerNameChange(index, e.target.value)}
-          placeholder={`Jugador ${index + 1}`}
-          style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', backgroundColor: '#1e293b', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
-        />
         <div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Agua (8k)</span>
-          <input type="number" min="0" value={p.agua} onChange={(e) => handlePlayerDrinkChange(index, 'agua', e.target.value)} style={{ width: '100%', padding: '0.4rem', borderRadius: '4px', backgroundColor: '#1e293b', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
+          <label style={{ display: 'block', color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+            Jugadores y Consumo Individual (Cancha: {courtPerPlayer.toLocaleString()} Gs. c/u)
+          </label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {players.map((p, index) => (
+              <div key={index} className="responsive-player-row">
+                <input 
+                  type="text"
+                  value={p.name}
+                  onChange={(e) => handlePlayerNameChange(index, e.target.value)}
+                  placeholder={`Jugador ${index + 1}`}
+                  style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', backgroundColor: '#1e293b', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
+                />
+                <div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Agua (8k)</span>
+                  <input 
+                    type="text" 
+                    inputMode="numeric"
+                    value={p.agua} 
+                    onChange={(e) => handlePlayerDrinkChange(index, 'agua', e.target.value.replace(/\D/g, ''))} 
+                    placeholder="0"
+                    style={{ width: '100%', padding: '0.4rem', borderRadius: '4px', backgroundColor: '#1e293b', border: '1px solid var(--border-color)', color: 'var(--text-main)', textAlign: 'center' }} 
+                  />
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Gaseosa (12k)</span>
+                  <input 
+                    type="text" 
+                    inputMode="numeric"
+                    value={p.gaseosa} 
+                    onChange={(e) => handlePlayerDrinkChange(index, 'gaseosa', e.target.value.replace(/\D/g, ''))} 
+                    placeholder="0"
+                    style={{ width: '100%', padding: '0.4rem', borderRadius: '4px', backgroundColor: '#1e293b', border: '1px solid var(--border-color)', color: 'var(--text-main)', textAlign: 'center' }} 
+                  />
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Energ. (18k)</span>
+                  <input 
+                    type="text" 
+                    inputMode="numeric"
+                    value={p.energizante} 
+                    onChange={(e) => handlePlayerDrinkChange(index, 'energizante', e.target.value.replace(/\D/g, ''))} 
+                    placeholder="0"
+                    style={{ width: '100%', padding: '0.4rem', borderRadius: '4px', backgroundColor: '#1e293b', border: '1px solid var(--border-color)', color: 'var(--text-main)', textAlign: 'center' }} 
+                  />
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Cerveza (20k)</span>
+                  <input 
+                    type="text" 
+                    inputMode="numeric"
+                    value={p.cerveza} 
+                    onChange={(e) => handlePlayerDrinkChange(index, 'cerveza', e.target.value.replace(/\D/g, ''))} 
+                    placeholder="0"
+                    style={{ width: '100%', padding: '0.4rem', borderRadius: '4px', backgroundColor: '#1e293b', border: '1px solid var(--border-color)', color: 'var(--text-main)', textAlign: 'center' }} 
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-        <div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Gaseosa (12k)</span>
-          <input type="number" min="0" value={p.gaseosa} onChange={(e) => handlePlayerDrinkChange(index, 'gaseosa', e.target.value)} style={{ width: '100%', padding: '0.4rem', borderRadius: '4px', backgroundColor: '#1e293b', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
-        </div>
-        <div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Energ. (18k)</span>
-          <input type="number" min="0" value={p.energizante} onChange={(e) => handlePlayerDrinkChange(index, 'energizante', e.target.value)} style={{ width: '100%', padding: '0.4rem', borderRadius: '4px', backgroundColor: '#1e293b', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
-        </div>
-        <div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Cerveza (20k)</span>
-          <input type="number" min="0" value={p.cerveza} onChange={(e) => handlePlayerDrinkChange(index, 'cerveza', e.target.value)} style={{ width: '100%', padding: '0.4rem', borderRadius: '4px', backgroundColor: '#1e293b', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
-        </div>
-      </div>
-    ))}
-  </div>
-</div>
 
-        {/* Resumen Total */}
         <div style={{ backgroundColor: '#0c100e', padding: '1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid var(--border-color)' }}>
           <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Cancha Total: {totalCourt.toLocaleString()} Gs. | Cantina Total: {totalDrinks.toLocaleString()} Gs.</span>
           <span style={{ color: 'var(--accent)', fontSize: '1.2rem', fontWeight: 'bold' }}>Total General: {grandTotal.toLocaleString()} Gs.</span>
